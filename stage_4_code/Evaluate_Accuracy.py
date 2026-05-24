@@ -11,11 +11,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 
 class Evaluate_Accuracy(evaluate):
     data = None
-
-    # 'macro' treats all classes equally, 'weighted' weights by class frequency
-    # macro is more common for balanced datasets like
-    # for ORL (40 classes, 10 samples each) macro is also fine
-    average = 'macro'
+    average = 'macro' # 'macro' treats all classes equally, 'weighted' weights by class frequency
 
     def evaluate(self):
         print('evaluating performance...')
