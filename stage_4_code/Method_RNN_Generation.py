@@ -4,7 +4,6 @@ import numpy as np
 
 from code.base_class.method import method
 
-
 class Method_RNN_Generation(method, nn.Module):
 
     def __init__(self, mName=None, mDescription=None, model_type="RNN"):
@@ -12,19 +11,19 @@ class Method_RNN_Generation(method, nn.Module):
         nn.Module.__init__(self)
 
         self.embedding_dim = 128
-        self.dropout = nn.Dropout(0.3)
         self.hidden_dim = 256
         self.lr = 1e-3
-        self.epochs = 50
+        self.epochs = 8
         self.batch_size = 128
         self.model_type = model_type
+        self.loss_list = []
 
         self.loss_fn = nn.CrossEntropyLoss()
 
-    # BUILD MODEL
-    # -------------------
+    # Build the model
     def build(self, vocab_size):
         self.embedding = nn.Embedding(vocab_size, self.embedding_dim)
+        self.dropout = nn.Dropout(0.3)
 
         if self.model_type == 'RNN':
             self.rnn = nn.RNN(
@@ -51,9 +50,7 @@ class Method_RNN_Generation(method, nn.Module):
 
         self.optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
 
-    # -------------------
-    # FORWARD
-    # -------------------
+
     def forward(self, x):
 
         x = self.embedding(x)
@@ -69,9 +66,7 @@ class Method_RNN_Generation(method, nn.Module):
 
         return out
 
-    # -------------------
-    # TRAIN
-    # -------------------
+    # Train the model
     def train_model(self, X, y):
 
         X = torch.LongTensor(X)
@@ -102,9 +97,9 @@ class Method_RNN_Generation(method, nn.Module):
 
             print(f"Epoch {epoch+1} Loss: {total_loss:.4f}")
 
-    # -------------------
-    # TEXT GENERATION
-    # -------------------
+            self.loss_list.append(total_loss)
+
+    # Text generation process
     def generate(self, start_words, vocab, idx2word, max_len=30):
 
         self.eval()
