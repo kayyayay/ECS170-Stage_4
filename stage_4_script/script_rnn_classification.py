@@ -36,7 +36,7 @@ setting_obj.prepare(data_obj, method_obj, result_obj, evaluate_obj)
 setting_obj.print_setup_summary()
 metrics = setting_obj.load_run_save_evaluate()
 
-print('IMDB RNN Results')
+print('/nIMDB RNN Results')
 print(f"Accuracy:  {metrics['accuracy']:.4f}")
 print(f"Precision: {metrics['precision']:.4f}")
 print(f"Recall:    {metrics['recall']:.4f}")
