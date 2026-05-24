@@ -10,36 +10,26 @@ import torch
 np.random.seed(2)
 torch.manual_seed(2)
 
-# -----------------------
-# DATASET
-# -----------------------
+# Load the dataset
 data_obj = Dataset_Loader_Joke('Jokes', '')
 data_obj.dataset_source_folder_path = '../../data/stage_4_data/text_generation/'
 
-# -----------------------
-# METHOD
-# -----------------------
+# Method
 method_obj = Method_RNN_Generation(
-    'GRU Generation',
+    'RNN Generation',
     '',
-    model_type='GRU'
+    model_type='RNN'
 )
 
-# -----------------------
-# RESULT SAVER
-# -----------------------
+# Saving the result
 result_obj = Result_Saver('saver', '')
 result_obj.result_destination_folder_path = '../../result/stage_4_result/'
 result_obj.result_destination_file_name = 'Joke_generation_result'
 
-# -----------------------
-# SETTING
-# -----------------------
+# Setting
 setting_obj = Setting_RNN_Gen('Generation setting', '')
 
-# -----------------------
-# RUN
-# -----------------------
+# Run the model
 evaluate_obj = Evaluate_Accuracy('evaluation', '')
 setting_obj.prepare(data_obj, method_obj, result_obj, evaluate_obj)
 
@@ -47,5 +37,18 @@ setting_obj.print_setup_summary()
 
 result = setting_obj.load_run_save_evaluate()
 
-print("\n=========== GENERATED JOKE ===========")
+print("\nGENERATED JOKE")
 print(result['sample'])
+
+import matplotlib
+matplotlib.use('TkAgg')
+
+import matplotlib.pyplot as plt
+
+result = setting_obj.result.data
+
+plt.plot(result['loss_list'])
+plt.title(f"{method_obj.model_type} Loss Curve")
+plt.xlabel("Epoch")
+plt.ylabel("Loss")
+plt.show()
