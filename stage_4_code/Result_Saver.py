@@ -9,7 +9,6 @@ from code.base_class.result import result
 import pickle
 import os
 
-
 class Result_Saver(result):
     data = None
     fold_count = None
