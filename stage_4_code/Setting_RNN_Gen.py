@@ -26,9 +26,16 @@ class Setting_RNN_Gen(setting):
             idx2word
         )
 
-        print("\nGENERATED TEXT:\n", sample)
+        print("\nGENERATED JOKE:\n", sample)
 
-        self.result.data = {"sample": sample}
+        self.result.data = {
+            "sample": sample,
+            "loss_list": self.method.loss_list
+        }
+
         self.result.save()
 
-        return {"sample": sample}
+        return {
+            "sample": sample,
+            "loss_list": self.method.loss_list
+        }
