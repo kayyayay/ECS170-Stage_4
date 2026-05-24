@@ -7,20 +7,18 @@ from code.stage_4_code.Evaluate_Accuracy import Evaluate_Accuracy
 
 class Method_RNN_Classification(method, nn.Module):
 
-    def __init__(self, mName=None, mDescription=None):
+    def __init__(self, mName=None, mDescription=None, model_type = "RNN"):
 
         method.__init__(self, mName, mDescription)
         nn.Module.__init__(self)
 
-        # -----------------------
-        # Hyperparameters
-        # -----------------------
+# The hyperparameters used
         self.learning_rate = 1e-3
-        self.max_epoch = 5
+        self.max_epoch = 8
         self.batch_size = 128
-
+        self.model_type = model_type
         self.embedding_dim = 128
-        self.hidden_dim = 128
+        self.hidden_dim = 256
 
         self.loss_list = []
         self.acc_list = []
@@ -28,21 +26,19 @@ class Method_RNN_Classification(method, nn.Module):
         # These will be set after dataset loading
         self.vocab_size = None
 
-        # -----------------------
-        # Model layers (defined later after vocab is known)
-        # -----------------------
+# Model layers
         self.embedding = None
         self.rnn = None
         self.fc = None
 
         self.loss_fn = nn.CrossEntropyLoss()
 
-    # -----------------------
-    # Build model after vocab is known
-    # -----------------------
+# After the vocab is known, we build the model
     def build_model(self, vocab_size):
 
         self.vocab_size = vocab_size
+
+        self.dropout = nn.Dropout(0.3)
 
         self.embedding = nn.Embedding(
             num_embeddings=vocab_size,
@@ -50,34 +46,51 @@ class Method_RNN_Classification(method, nn.Module):
             padding_idx=0
         )
 
-        self.rnn = nn.LSTM(
-            input_size=self.embedding_dim,
-            hidden_size=self.hidden_dim,
-            batch_first=True
-        )
+        if self.model_type == 'RNN':
+
+            self.rnn = nn.RNN(
+                input_size=self.embedding_dim,
+                hidden_size=self.hidden_dim,
+                batch_first=True
+            )
+
+        elif self.model_type == 'LSTM':
+
+            self.rnn = nn.LSTM(
+                input_size=self.embedding_dim,
+                hidden_size=self.hidden_dim,
+                batch_first=True
+            )
+
+        elif self.model_type == 'GRU':
+
+            self.rnn = nn.GRU(
+                input_size=self.embedding_dim,
+                hidden_size=self.hidden_dim,
+                batch_first=True
+            )
 
         self.fc = nn.Linear(self.hidden_dim, 2)
 
         self.optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
 
-    # -----------------------
-    # Forward pass
-    # -----------------------
+
     def forward(self, x):
 
-        x = self.embedding(x)          # (N, seq_len) -> (N, seq_len, emb)
+        x = self.embedding(x)
+        x = self.dropout(x)
 
-        _, (hidden, _) = self.rnn(x)   # hidden: (1, N, hidden_dim)
+        if self.model_type == 'LSTM':
+            out, (hidden, _) = self.rnn(x)
+        else:
+            out, hidden = self.rnn(x)
 
-        out = hidden[-1]               # (N, hidden_dim)
-
-        out = self.fc(out)             # (N, 2)
+        hidden = hidden[-1]
+        out = self.fc(hidden)
 
         return out
 
-    # -----------------------
-    # Training
-    # -----------------------
+# Train the model
     def train_model(self, X, y):
 
         X_t = torch.LongTensor(np.array(X))
@@ -115,9 +128,7 @@ class Method_RNN_Classification(method, nn.Module):
             avg_loss = epoch_loss / batches
             self.loss_list.append(avg_loss)
 
-            # -----------------------
             # Accuracy check
-            # -----------------------
             self.eval()
 
             with torch.no_grad():
@@ -141,9 +152,7 @@ class Method_RNN_Classification(method, nn.Module):
 
             print(f"Epoch {epoch+1}/{self.max_epoch} | Loss: {avg_loss:.4f} | Acc: {acc:.4f}")
 
-    # -----------------------
-    # Testing
-    # -----------------------
+    # Testing the model
     def test(self, X):
 
         self.eval()
@@ -160,10 +169,11 @@ class Method_RNN_Classification(method, nn.Module):
 
         return torch.cat(preds).numpy()
 
-    # -----------------------
-    # Run pipeline
-    # -----------------------
+# Running the pipeline
     def run(self):
+
+        self.loss_list = []
+        self.acc_list = []
 
         print("RNN method running...")
         print("--start training...")
@@ -174,7 +184,6 @@ class Method_RNN_Classification(method, nn.Module):
         test_X = self.data['test']['X']
         test_y = self.data['test']['y']
 
-        # IMPORTANT: build model using vocab size from dataset loader
         vocab_size = self.data.get('vocab_size', 10000)
         self.build_model(vocab_size)
 
@@ -189,7 +198,7 @@ class Method_RNN_Classification(method, nn.Module):
             'loss_list': self.loss_list,
             'acc_list': self.acc_list,
         }
-        print("=== DEBUG CHECK ===")
+        print("Debug Check")
         print("Train labels unique:", np.unique(train_y))
         print("Test labels unique:", np.unique(test_y))
 
