@@ -20,17 +20,30 @@ class Dataset_Loader_Joke(dataset):
         self.max_vocab_size = 10000
         self.max_seq_len = 30
 
-    # -------------------
-    # CLEAN TEXT
-    # -------------------
-    def clean(self, text):
-        text = text.lower()
-        text = re.sub(r'[^a-z\s]', '', text)
-        return text.split()
 
-    # -------------------
-    # LOAD DATA
-    # -------------------
+# Clean the text
+    def clean(self, text):
+
+        text = text.lower()
+
+        text = re.sub(r'[^a-z\s]', ' ', text)
+
+        words = text.split()
+
+        # keep only alphabetic words
+        cleaned = []
+
+        for w in words:
+
+            if w.isalpha():
+
+                # remove very weird words
+                if len(w) > 1 and len(w) < 15:
+                    cleaned.append(w)
+
+        return cleaned
+
+# Load the data
     def load_jokes(self, folder):
 
         texts = []
@@ -45,24 +58,44 @@ class Dataset_Loader_Joke(dataset):
 
         return texts
 
-    # -------------------
-    # BUILD VOCAB
-    # -------------------
+# Build the vocab
     def build_vocab(self, texts):
+
         counter = Counter()
+
+        # count all words
         for t in texts:
             counter.update(t)
 
-        vocab = {'<PAD>': 0, '<UNK>': 1}
+        vocab = {
+            '<PAD>': 0,
+            '<UNK>': 1
+        }
 
-        for i, (w, _) in enumerate(counter.most_common(self.max_vocab_size - 2), 2):
+        # keep only words appearing at least 2 times
+        filtered_words = []
+
+        for w, c in counter.items():
+
+            if c >= 2:
+                filtered_words.append((w, c))
+
+        # sort by frequency
+        filtered_words = sorted(
+            filtered_words,
+            key=lambda x: x[1],
+            reverse=True
+        )
+
+        # build vocab
+        for i, (w, _) in enumerate(
+                filtered_words[:self.max_vocab_size - 2],
+                start=2):
             vocab[w] = i
 
         return vocab
 
-    # -------------------
-    # CREATE TRAIN PAIRS (SLIDING WINDOW)
-    # -------------------
+# Create sliding windows (input word - target word pair)
     def create_pairs(self, texts, vocab):
 
         X, y = [], []
@@ -76,9 +109,7 @@ class Dataset_Loader_Joke(dataset):
 
         return X, y
 
-    # -------------------
-    # PAD
-    # -------------------
+# Pad
     def pad(self, seq):
         if len(seq) < self.max_seq_len:
             seq = seq + [0] * (self.max_seq_len - len(seq))
@@ -86,9 +117,7 @@ class Dataset_Loader_Joke(dataset):
             seq = seq[:self.max_seq_len]
         return seq
 
-    # -------------------
-    # LOAD
-    # -------------------
+# Load
     def load(self):
 
         print("loading joke dataset...")
